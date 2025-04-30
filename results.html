@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Results - TIMBORD TEAM</title>
+
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f9f9f9;
+    }
+
+    header {
+      background: #333;
+      padding: 20px;
+      text-align: center;
+    }
+
+    header h1 {
+      color: white;
+      margin: 0;
+    }
+
+    nav ul {
+      list-style: none;
+      padding: 0;
+      margin: 10px 0 0 0;
+      text-align: center;
+    }
+
+    nav ul li {
+      display: inline-block;
+      margin: 0 15px;
+    }
+
+    nav ul li a {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 18px;
+    }
+
+    nav ul li a:hover {
+      text-decoration: underline;
+    }
+
+    .content {
+      padding: 20px;
+      text-align: center;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th, td {
+      padding: 12px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+
+    th {
+      background-color: #333;
+      color: white;
+    }
+
+    .leader {
+      background: #4CAF50;
+      color: white;
+      padding: 10px;
+      border-radius: 10px;
+      margin: 20px 0;
+      font-size: 20px;
+    }
+
+    footer {
+      background: #333;
+      color: white;
+      text-align: center;
+      padding: 20px;
+      margin-top: 30px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>TIMBORD TEAM</h1>
+  <nav>
+    <ul>
+      <li><a href="home.html">Home</a></li>
+      <li><a href="vote.html">Vote</a></li>
+      <li><a href="results.html">Results</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="admin.html">Admin</a></li>
+    </ul>
+  </nav>
+</header>
+
+<div class="content">
+  <h2>Live Voting Results</h2>
+  <div id="leaderBadge"></div>
+  <div id="resultsTable"></div>
+</div>
+
+<footer>
+  &copy; 2025 TIMBORD TEAM. All Rights Reserved.
+</footer>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDzni5AAl5PZ2287aBT_bXc7ZCXMN6szLA",
+    authDomain: "vote-67cff.firebaseapp.com",
+    databaseURL: "https://vote-67cff-default-rtdb.firebaseio.com",
+    projectId: "vote-67cff",
+    storageBucket: "vote-67cff.appspot.com",
+    messagingSenderId: "1065671669902",
+    appId: "1:1065671669902:android:fbd53b77df74858a8ef1df"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  function updateResults() {
+    const table = document.getElementById('resultsTable');
+    const leaderBadge = document.getElementById('leaderBadge');
+
+    db.ref('contestants').on('value', snapshot => {
+      const data = snapshot.val();
+      const contestants = [];
+      for (let id in data) {
+        contestants.push({ id, ...data[id] });
+      }
+
+      // Sort by votes descending
+      const sorted = contestants.sort((a, b) => b.votes - a.votes);
+
+      if (sorted.length > 0) {
+        const leader = sorted[0];
+        leaderBadge.innerHTML = `<div class="leader">Leading: ${leader.name} with ${leader.votes} votes!</div>`;
+      } else {
+        leaderBadge.innerHTML = `<div>No votes yet.</div>`;
+      }
+
+      table.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Contestant</th>
+              <th>Votes</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${sorted.map(c => `
+              <tr>
+                <td>${c.name}</td>
+                <td>${c.votes}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    });
+  }
+
+  updateResults();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>TIMBORD TEAM - Home</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Text animations & style -->
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background-color: #f9f9f9;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background: #333;
+      padding: 20px;
+      text-align: center;
+    }
+
+    header h1 {
+      color: white;
+      margin: 0;
+    }
+
+    nav ul {
+      list-style: none;
+      margin: 10px 0 0 0;
+      padding: 0;
+      text-align: center;
+    }
+
+    nav ul li {
+      display: inline-block;
+      margin: 0 15px;
+    }
+
+    nav ul li a {
+      color: white;
+      font-size: 18px;
+      font-weight: bold;
+      text-decoration: none;
+    }
+
+    .section {
+      padding: 30px 20px;
+      text-align: center;
+    }
+
+    .banner {
+      height: 300px;
+      background: url('wework.jpg') no-repeat center center/cover;
+      animation: fadeIn 1s ease-in-out;
+    }
+
+    .image-block img {
+      width: 90%;
+      max-width: 700px;
+      border-radius: 10px;
+      animation: fadeSlide 1s ease-in-out;
+    }
+
+    .clickable-box {
+      display: inline-block;
+      margin-top: 30px;
+      background: #2196f3;
+      color: white;
+      padding: 15px 30px;
+      font-size: 18px;
+      border-radius: 10px;
+      text-decoration: none;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      transition: background 0.3s ease;
+    }
+
+    .clickable-box:hover {
+      background: #0d8af0;
+    }
+
+    .filters select {
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 6px;
+      margin: 5px;
+    }
+
+    .article {
+      background: white;
+      margin: 20px auto;
+      max-width: 700px;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      text-align: left;
+    }
+
+    .article h3, .article h4 {
+      margin: 0;
+    }
+
+    .article small {
+      color: #888;
+      font-size: 14px;
+    }
+
+    .category-tag {
+      background-color: #2196f3;
+      color: white;
+      display: inline-block;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      margin: 10px 0;
+    }
+
+    .blue-button {
+      background-color: #2196f3;
+      padding: 8px 16px;
+      border-radius: 6px;
+      color: white;
+      text-decoration: none;
+      display: inline-block;
+      margin-top: 10px;
+    }
+
+    .read-more {
+      background: #eee;
+      border: none;
+      color: #333;
+      margin-top: 10px;
+      padding: 6px 12px;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+
+    .share-buttons a {
+      margin-right: 10px;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    @keyframes fadeSlide {
+      0% { opacity: 0; transform: translateY(20px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+
+<header>
+  <h1>TIMBORD TEAM</h1>
+  <nav>
+    <ul>
+      <li><a href="home.html">Home</a></li>
+      <li><a href="vote.html">Vote</a></li>
+      <li><a href="results.html">Results</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="admin.html">Admin</a></li>
+    </ul>
+  </nav>
+</header>
+
+<div class="banner"></div>
+
+<section class="section">
+  <h2>Welcome to TIMBORD TEAM</h2>
+  <p>Celebrating individuals through recognition, awards, and influence-based voting. Our mission is to inspire purpose and reward excellence.</p>
+</section>
+
+<section class="section image-block">
+  <img src="team.jpg" alt="Purpose of TIMBORD">
+  <h2>The Importance of TIMBORD TEAM</h2>
+  <p>We recognize talent and influence across communities through public voting contests. Our platform celebrates impact and encourages growth.</p>
+</section>
+
+<section class="section">
+  <a class="clickable-box" href="https://chat.whatsapp.com/FK0jtbkisjbCgE9Pn3jrWx" target="_blank">Join our Official WhatsApp Group</a>
+</section>
+
+<section class="section" id="totalVotesSection">
+  <h2>Total Votes Cast</h2>
+  <p id="totalVotesDisplay" style="font-size: 24px; font-weight: bold; color: #2196f3;">Loading...</p>
+</section>
+
+<section class="section">
+  <h2>Latest Articles</h2>
+  <div class="filters">
+    <select id="categoryFilter" onchange="filterAndSortArticles()">
+      <option value="All">All Categories</option>
+      <option value="Awards">Awards</option>
+      <option value="Motivation">Motivation</option>
+      <option value="Contests">Contests</option>
+      <option value="Updates">Updates</option>
+    </select>
+
+    <select id="sortFilter" onchange="filterAndSortArticles()">
+      <option value="newest">Newest First</option>
+      <option value="oldest">Oldest First</option>
+      <option value="az">A-Z (Title)</option>
+    </select>
+  </div>
+
+  <div id="articlesContainer"></div>
+</section>
+
+<footer>
+  &copy; 2025 TIMBORD TEAM. All Rights Reserved.
+</footer>
+
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDzni5AAl5PZ2287aBT_bXc7ZCXMN6szLA",
+    authDomain: "vote-67cff.firebaseapp.com",
+    databaseURL: "https://vote-67cff-default-rtdb.firebaseio.com",
+    projectId: "vote-67cff",
+    storageBucket: "vote-67cff.appspot.com",
+    messagingSenderId: "1065671669902",
+    appId: "1:1065671669902:android:fbd53b77df74858a8ef1df"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  let allArticles = [];
+
+  function loadArticles() {
+    db.ref('articles').on('value', snapshot => {
+      const data = snapshot.val();
+      allArticles = [];
+      if (data) {
+        for (let id in data) {
+          allArticles.push({ id, ...data[id] });
+        }
+        filterAndSortArticles();
+      }
+    });
+  }
+
+  function filterAndSortArticles() {
+    const category = document.getElementById("categoryFilter").value;
+    const sort = document.getElementById("sortFilter").value;
+    let filtered = allArticles;
+
+    if (category !== "All") {
+      filtered = filtered.filter(a => a.category === category);
+    }
+
+    if (sort === "newest") {
+      filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+    } else if (sort === "oldest") {
+      filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
+    } else if (sort === "az") {
+      filtered.sort((a, b) => a.title.localeCompare(b.title));
+    }
+
+    renderArticles(filtered);
+  }
+
+  function renderArticles(articles) {
+    const container = document.getElementById('articlesContainer');
+    container.innerHTML = '';
+
+    articles.forEach(article => {
+      const shortContent = marked.parse(article.content).replace(/(<([^>]+)>)/gi, "").substring(0, 200) + "...";
+      const div = document.createElement('div');
+      div.className = 'article';
+      div.innerHTML = `
+        <h3>${article.title}</h3>
+        ${article.subtitle ? `<h4>${article.subtitle}</h4>` : ''}
+        <div class="category-tag">${article.category || "General"}</div>
+        <small>Posted on: ${article.date}</small>
+        <p id="preview-${article.id}">${shortContent}</p>
+        <button class="read-more" onclick="expandArticle('${article.id}', \`${marked.parse(article.content).replace(/`/g, "\\`")}\`)">Read More</button>
+        ${article.link ? `<br><a class="blue-button" href="${article.link}" target="_blank">${article.buttonText || 'Learn More'}</a>` : ''}
+        <div class="share-buttons">
+          <a href="https://wa.me/?text=${encodeURIComponent(article.title + ' - ' + window.location.href)}" target="_blank">Share on WhatsApp</a>
+          <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}" target="_blank">Share on Facebook</a>
+        </div>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function expandArticle(id, fullContent) {
+    document.getElementById(`preview-${id}`).innerHTML = fullContent;
+  }
+
+  function loadTotalVotes() {
+    db.ref("contestants").on("value", snapshot => {
+      let total = 0;
+      const data = snapshot.val();
+      if (data) {
+        Object.values(data).forEach(c => {
+          total += parseInt(c.votes || 0);
+        });
+      }
+      document.getElementById("totalVotesDisplay").textContent = total.toLocaleString();
+    });
+  }
+
+  loadArticles();
+  loadTotalVotes();
+</script>
+
+</body>
+</html>

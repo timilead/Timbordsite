@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vote - TIMBORD TEAM</title>
+
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f9f9f9;
+    }
+
+    header {
+      background: #333;
+      padding: 20px;
+      text-align: center;
+    }
+
+    header h1 {
+      color: white;
+      margin: 0;
+    }
+
+    nav ul {
+      list-style: none;
+      padding: 0;
+      margin: 10px 0 0 0;
+      text-align: center;
+    }
+
+    nav ul li {
+      display: inline-block;
+      margin: 0 15px;
+    }
+
+    nav ul li a {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 18px;
+    }
+
+    nav ul li a:hover {
+      text-decoration: underline;
+    }
+
+    .content {
+      padding: 20px;
+      text-align: center;
+    }
+
+    form {
+      margin-top: 20px;
+    }
+
+    select, input, button {
+      padding: 10px;
+      font-size: 18px;
+      margin: 10px;
+      width: 80%;
+      max-width: 400px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    footer {
+      background: #333;
+      color: white;
+      text-align: center;
+      padding: 20px;
+      margin-top: 30px;
+    }
+
+    .popup {
+      display: none;
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #4CAF50;
+      color: white;
+      padding: 15px 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+      z-index: 1000;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>TIMBORD TEAM</h1>
+  <nav>
+    <ul>
+      <li><a href="home.html">Home</a></li>
+      <li><a href="vote.html">Vote</a></li>
+      <li><a href="results.html">Results</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="admin.html">Admin</a></li>
+    </ul>
+  </nav>
+</header>
+
+<div class="content">
+  <h2>Vote for Your Favorite Contestant</h2>
+  <form id="voteForm">
+    <select id="contestantSelect" required>
+      <option value="">Select a Contestant</option>
+    </select>
+    <br>
+    <input type="text" id="fullName" placeholder="Enter Your Full Name" required>
+    <input type="text" id="phoneNumber" placeholder="Enter Your Phone Number" required>
+    <input type="text" id="paymentReference" placeholder="Enter Payment Code (e.g. SXY1KVD7)" required>
+    <br>
+    <button type="submit">Submit Vote</button>
+  </form>
+</div>
+
+<div class="popup" id="popupMessage">Thanks for voting!</div>
+
+<footer>
+  &copy; 2025 TIMBORD TEAM. All Rights Reserved.
+</footer>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDzni5AAl5PZ2287aBT_bXc7ZCXMN6szLA",
+    authDomain: "vote-67cff.firebaseapp.com",
+    databaseURL: "https://vote-67cff-default-rtdb.firebaseio.com",
+    projectId: "vote-67cff",
+    storageBucket: "vote-67cff.appspot.com",
+    messagingSenderId: "1065671669902",
+    appId: "1:1065671669902:android:fbd53b77df74858a8ef1df"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  const contestantSelect = document.getElementById('contestantSelect');
+
+  // Load contestants into dropdown
+  db.ref('contestants').once('value', snapshot => {
+    const data = snapshot.val();
+    for (let id in data) {
+      const option = document.createElement('option');
+      option.value = id;
+      option.innerText = data[id].name;
+      contestantSelect.appendChild(option);
+    }
+  });
+
+  document.getElementById('voteForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const id = contestantSelect.value;
+    const fullName = document.getElementById('fullName').value.trim();
+    const phone = document.getElementById('phoneNumber').value.trim();
+    const paymentRef = document.getElementById('paymentReference').value.trim().toUpperCase();
+
+    if (id && fullName && phone && paymentRef) {
+      // Verify new format payment code
+      db.ref('paymentCodes').once('value', snapshot => {
+        const data = snapshot.val();
+        let validCodeKey = null;
+
+        for (let key in data) {
+          if (data[key].code === paymentRef && !data[key].used) {
+            validCodeKey = key;
+            break;
+          }
+        }
+
+        if (validCodeKey) {
+          const contestantRef = db.ref('contestants/' + id);
+          contestantRef.get().then(contestantSnapshot => {
+            if (contestantSnapshot.exists()) {
+              const currentVotes = contestantSnapshot.val().votes || 0;
+              contestantRef.update({ votes: currentVotes + 1 });
+
+              const voteData = {
+                fullName: fullName,
+                phone: phone,
+                receipt: paymentRef,
+                contestantVoted: contestantSnapshot.val().name,
+                timestamp: new Date().toISOString()
+              };
+              db.ref('votes').push(voteData);
+
+              // Mark code as used
+              db.ref('paymentCodes/' + validCodeKey).update({ used: true });
+
+              const popup = document.getElementById('popupMessage');
+              popup.style.display = 'block';
+              setTimeout(() => {
+                popup.style.display = 'none';
+              }, 3000);
+
+              contestantSelect.value = "";
+              document.getElementById('fullName').value = "";
+              document.getElementById('phoneNumber').value = "";
+              document.getElementById('paymentReference').value = "";
+            }
+          });
+        } else {
+          alert("Invalid or already used Payment Code.");
+        }
+      });
+    } else {
+      alert("Please fill all fields correctly.");
+    }
+  });
+</script>
+
+</body>
+</html>
