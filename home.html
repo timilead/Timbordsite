@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <title>TIMBORD TEAM - Home</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-  <!-- Text animations & style -->
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, sans-serif;
@@ -18,11 +18,44 @@
       background: #333;
       padding: 20px;
       text-align: center;
+      position: relative;
     }
 
     header h1 {
       color: white;
       margin: 0;
+    }
+
+    .hamburger {
+      position: absolute;
+      left: 20px;
+      top: 20px;
+      cursor: pointer;
+      color: white;
+      font-size: 24px;
+    }
+
+    .dropdown {
+      position: absolute;
+      left: 20px;
+      top: 60px;
+      background: white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      display: none;
+      flex-direction: column;
+      border-radius: 6px;
+      z-index: 10;
+    }
+
+    .dropdown a {
+      padding: 10px 20px;
+      color: #333;
+      text-decoration: none;
+      border-bottom: 1px solid #ccc;
+    }
+
+    .dropdown a:hover {
+      background-color: #f0f0f0;
     }
 
     nav ul {
@@ -141,6 +174,13 @@
       font-size: 14px;
     }
 
+    footer {
+      text-align: center;
+      padding: 20px;
+      background: #eee;
+      color: #555;
+    }
+
     @keyframes fadeSlide {
       0% { opacity: 0; transform: translateY(20px); }
       100% { opacity: 1; transform: translateY(0); }
@@ -151,26 +191,30 @@
 <body>
 
 <header>
-  <h1>TIMBORD TEAM</h1>
-  <!-- Breaking News Banner -->
-<div style="background: #ffeb3b; color: #000; padding: 15px; text-align: center; font-weight: bold; font-size: 16px;">
-  BREAKING: TIMBORD TEAM is now officially registered with <strong>SMEDAN</strong>!
-  This means greater recognition, access to funding, and credibility for all our activities.
-</div>
+  <div class="hamburger" onclick="toggleDropdown()">
+    <i class="fas fa-bars"></i>
+  </div>
+  <div class="dropdown" id="dropdownMenu">
+    <a href="login.html">Login</a>
+    <a href="signup.html">Sign Up</a>
+  </div>
 
-<!-- Certificate Section -->
-<section class="section" style="background: #fff9c4; text-align: center;">
-  <h2 style="color: #333;">Official SMEDAN Registration Certificate</h2>
-  <img src="IMG_3472.jpeg" alt="SMEDAN Certificate" style="max-width: 90%; height: auto; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); margin-top: 10px;" />
-  <p style="margin-top: 15px; font-size: 16px;">TIMBORD TEAM is now a recognized entity under the Small and Medium Enterprises Development Agency of Nigeria (SMEDAN), giving our community access to official support, visibility, and growth opportunities.</p>
-</section>
+  <h1>TIMBORD TEAM</h1>
+
+  <!-- Breaking News Banner -->
+  <div style="background: #ffeb3b; color: #000; padding: 15px; text-align: center; font-weight: bold; font-size: 16px;">
+    BREAKING: TIMBORD TEAM is now officially registered with <strong>SMEDAN</strong>!
+    This means greater recognition, access to funding, and credibility for all our activities.
+  </div>
+
   <nav>
     <ul>
-       <li><a href="home.html">Home</a></li>
+      <li><a href="home.html">Home</a></li>
       <li><a href="vote.html">Vote</a></li>
       <li><a href="results.html">Results</a></li>
       <li><a href="about.html">About</a></li>
       <li><a href="admin.html">Admin</a></li>
+    </ul>
   </nav>
 </header>
 
@@ -215,6 +259,13 @@
   </div>
 
   <div id="articlesContainer"></div>
+</section>
+
+<!-- SMEDAN Certificate Section (Moved Below) -->
+<section class="section" style="background: #fff9c4; text-align: center;">
+  <h2 style="color: #333;">Official SMEDAN Registration Certificate</h2>
+  <img src="IMG_3472.jpeg" alt="SMEDAN Certificate" style="max-width: 90%; height: auto; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); margin-top: 10px;" />
+  <p style="margin-top: 15px; font-size: 16px;">TIMBORD TEAM is now a recognized entity under the Small and Medium Enterprises Development Agency of Nigeria (SMEDAN), giving our community access to official support, visibility, and growth opportunities.</p>
 </section>
 
 <footer>
@@ -311,6 +362,11 @@
       }
       document.getElementById("totalVotesDisplay").textContent = total.toLocaleString();
     });
+  }
+
+  function toggleDropdown() {
+    const menu = document.getElementById("dropdownMenu");
+    menu.style.display = (menu.style.display === "flex") ? "none" : "flex";
   }
 
   loadArticles();
