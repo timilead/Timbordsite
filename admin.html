@@ -2,73 +2,272 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Admin Login - Sureodds</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel - TIMBORD TEAM</title>
+  <link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css" />
+  <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f1fdf3;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-    }
-
-    .login-box {
-      background: #fff;
-      padding: 40px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      width: 100%;
-      max-width: 400px;
-    }
-
-    h2 {
-      text-align: center;
-      color: #218739;
-    }
-
-    input, button {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-    }
-
-    button {
-      background-color: #218739;
-      color: white;
-      cursor: pointer;
-    }
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f9f9f9; }
+    header { background: #333; color: white; text-align: center; padding: 20px; }
+    nav ul { list-style: none; margin: 0; padding: 0; display: flex; justify-content: center; }
+    nav ul li { margin: 0 10px; }
+    nav ul li a { color: white; text-decoration: none; font-weight: bold; }
+    .container { padding: 20px; max-width: 900px; margin: auto; }
+    input, select, textarea, button { display: block; width: 100%; padding: 10px; margin: 10px 0; }
+    button { background: #2196f3; color: white; border: none; cursor: pointer; }
+    .section { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
+    .post, .code-item { margin-top: 20px; padding: 10px; border-bottom: 1px solid #ccc; }
+    .delete-btn { background: #f44336; margin-top: 5px; }
   </style>
 </head>
 <body>
 
-<div class="login-box">
-  <h2>Sureodds Admin Login</h2>
-  <input type="email" id="email" placeholder="Admin Email" required />
-  <input type="password" id="password" placeholder="Password" required />
-  <button onclick="adminLogin()">Login</button>
+<header>
+  <h1>TIMBORD TEAM - Admin Panel</h1>
+  <nav>
+    <ul>
+      <li><a href="home.html">Home</a></li>
+      <li><a href="vote.html">Vote</a></li>
+      <li><a href="results.html">Results</a></li>
+      <li><a href="about.html">About</a></li>
+    </ul>
+  </nav>
+</header>
+
+<div class="container" id="loginSection">
+  <h2>Admin Login</h2>
+  <input type="password" id="adminPassword" placeholder="Enter Admin Password" />
+  <button onclick="login()">Login</button>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<div class="container" id="adminPanel" style="display:none;">
+  <!-- Payment Code Section -->
+  <div class="section">
+    <h2>Generate Payment Code</h2>
+    <button onclick="generateCode()">Generate Code</button>
+    <div id="codeList"></div>
+  </div>
+
+  <!-- Contestants Section -->
+  <div class="section">
+    <h2>Manage Contestants</h2>
+    <input type="text" id="contestantName" placeholder="Contestant Name">
+    <input type="text" id="contestantImage" placeholder="Image URL">
+    <button onclick="addContestant()">Add/Update Contestant</button>
+    <div id="contestantsList"></div>
+  </div>
+
+  <!-- Blog Post Section -->
+  <div class="section">
+    <h2>Post Article</h2>
+    <input type="text" id="articleTitle" placeholder="Article Title">
+    <input type="text" id="articleSubtitle" placeholder="Subheading (optional)">
+    <select id="articleCategory">
+      <option value="General">Select Category</option>
+      <option value="Awards">Awards</option>
+      <option value="Motivation">Motivation</option>
+      <option value="Contests">Contests</option>
+      <option value="Updates">Updates</option>
+    </select>
+    <textarea id="markdownContent"></textarea>
+    <input type="text" id="articleLink" placeholder="Button Link (optional)">
+    <input type="text" id="buttonText" placeholder="Button Text (e.g. Learn More)">
+    <button onclick="submitArticle()">Post Article</button>
+    <div id="postsContainer"></div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 <script>
-  const supabase = supabase.createClient(
-    "https://dbpnkzbyopjvsikrdljj.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRicG5remJ5b3BqdnNpa3JkbGpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY4MDIyNDQsImV4cCI6MjA2MjM3ODI0NH0.yzTg2mZCACmpcubpYjFD1WUsrT_94gt3eTjdEc3tXvU"
-  );
+  const firebaseConfig = {
+    apiKey: "AIzaSyDzni5AAl5PZ2287aBT_bXc7ZCXMN6szLA",
+    authDomain: "vote-67cff.firebaseapp.com",
+    databaseURL: "https://vote-67cff-default-rtdb.firebaseio.com",
+    projectId: "vote-67cff",
+    storageBucket: "vote-67cff.appspot.com",
+    messagingSenderId: "1065671669902",
+    appId: "1:1065671669902:android:fbd53b77df74858a8ef1df"
+  };
 
-  async function adminLogin() {
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+  const auth = firebase.auth();
+  const adminPassword = "@Timbord1";
+  let editingContestantId = null;
 
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  auth.signInAnonymously().catch(error => {
+    console.error("Firebase Auth Error:", error.message);
+  });
 
-    if (error) {
-      alert('Login failed. Check credentials.');
+  function login() {
+    const pass = document.getElementById('adminPassword').value;
+    if (pass === adminPassword) {
+      document.getElementById('loginSection').style.display = 'none';
+      document.getElementById('adminPanel').style.display = 'block';
+      loadArticles();
+      loadContestants();
+      loadCodes();
     } else {
-      localStorage.setItem("sureodds_admin", JSON.stringify(data.session));
-      window.location.href = "admin.html";
+      alert("Incorrect Password");
+    }
+  }
+
+  function generateCode() {
+    const code = Math.random().toString(36).substring(2, 10).toUpperCase();
+    const codeRef = db.ref("paymentCodes").push();
+    codeRef.set({ code, used: false })
+      .then(() => {
+        alert("Payment code generated: " + code);
+        loadCodes();
+      })
+      .catch(err => {
+        alert("Error generating code: " + err.message);
+        console.error(err);
+      });
+  }
+
+  function searchCodes(keyword) {
+    const list = document.getElementById("codeList");
+    db.ref("paymentCodes").once("value", snapshot => {
+      list.innerHTML = "<input type='text' placeholder='Search code...' oninput='searchCodes(this.value)' style='margin-bottom: 10px; width: 100%; padding: 8px;'>";
+      const data = snapshot.val();
+      if (data) {
+        Object.entries(data).forEach(([id, val]) => {
+          if (val.code.includes(keyword.toUpperCase())) {
+            list.innerHTML += `
+              <div class="code-item">
+                <strong>${val.code}</strong> - ${val.used ? "Used" : "Unused"}
+                <button class="delete-btn" onclick="deleteCode('${id}')">Delete</button>
+              </div>
+            `;
+          }
+        });
+      }
+    });
+  }
+
+  function loadCodes() {
+    const list = document.getElementById("codeList");
+    list.innerHTML = `<input type='text' placeholder='Search code...' oninput='searchCodes(this.value)' style='margin-bottom: 10px; width: 100%; padding: 8px;'>`;
+    db.ref("paymentCodes").on("value", snapshot => {
+      const data = snapshot.val();
+      list.innerHTML = `<input type='text' placeholder='Search code...' oninput='searchCodes(this.value)' style='margin-bottom: 10px; width: 100%; padding: 8px;'>`;
+      if (data) {
+        Object.entries(data).forEach(([id, val]) => {
+          list.innerHTML += `
+            <div class="code-item">
+              <strong>${val.code}</strong> - ${val.used ? "Used" : "Unused"}
+              <button class="delete-btn" onclick="deleteCode('${id}')">Delete</button>
+            </div>
+          `;
+        });
+      }
+    });
+  }
+
+  function deleteCode(id) {
+    db.ref("paymentCodes/" + id).remove();
+  }
+
+  function addContestant() {
+    const name = document.getElementById('contestantName').value.trim();
+    const img = document.getElementById('contestantImage').value.trim();
+    if (!name || !img) return alert("Fill in both fields");
+
+    if (editingContestantId) {
+      db.ref('contestants/' + editingContestantId).update({ name, img });
+      alert("Contestant updated!");
+      editingContestantId = null;
+    } else {
+      const newRef = db.ref('contestants').push();
+      newRef.set({ name, img, votes: 0 });
+      alert("Contestant added!");
+    }
+
+    document.getElementById('contestantName').value = '';
+    document.getElementById('contestantImage').value = '';
+    loadContestants();
+  }
+
+  function loadContestants() {
+    db.ref('contestants').once('value', snapshot => {
+      const list = document.getElementById('contestantsList');
+      list.innerHTML = '';
+      const data = snapshot.val();
+      if (data) {
+        Object.entries(data).forEach(([id, val]) => {
+          list.innerHTML += `
+            <div class="post">
+              <strong>${val.name}</strong><br>
+              <img src='${val.img}' width='100'><br>
+              Votes: ${val.votes}<br>
+              <button onclick="editContestant('${id}', '${val.name}', '${val.img}')">Edit</button>
+              <button class="delete-btn" onclick="deleteContestant('${id}')">Delete</button>
+            </div>
+          `;
+        });
+      }
+    });
+  }
+
+  function editContestant(id, name, img) {
+    document.getElementById('contestantName').value = name;
+    document.getElementById('contestantImage').value = img;
+    editingContestantId = id;
+  }
+
+  function deleteContestant(id) {
+    if (confirm("Delete this contestant?")) {
+      db.ref('contestants/' + id).remove();
+      loadContestants();
+    }
+  }
+
+  const easyMDE = new EasyMDE({ element: document.getElementById("markdownContent") });
+
+  function submitArticle() {
+    const title = document.getElementById('articleTitle').value.trim();
+    const subtitle = document.getElementById('articleSubtitle').value.trim();
+    const content = easyMDE.value().trim();
+    const link = document.getElementById('articleLink').value.trim();
+    const buttonText = document.getElementById('buttonText').value.trim();
+    const category = document.getElementById('articleCategory').value;
+    const date = new Date().toLocaleDateString();
+    if (!title || !content) return alert("Title and content are required.");
+    const post = { title, subtitle, content, link, buttonText, category, date };
+    db.ref('articles').push(post);
+    alert("Article posted");
+    easyMDE.value('');
+    loadArticles();
+  }
+
+  function loadArticles() {
+    db.ref('articles').once('value', snapshot => {
+      const container = document.getElementById('postsContainer');
+      container.innerHTML = '';
+      const data = snapshot.val();
+      if (data) {
+        Object.entries(data).reverse().forEach(([id, post]) => {
+          container.innerHTML += `
+            <div class="post">
+              <strong>${post.title}</strong> <br>
+              ${post.subtitle ? `<em>${post.subtitle}</em><br>` : ''}
+              <small>${post.date}</small>
+              <p>${post.content.substring(0, 150)}...</p>
+              ${post.link ? `<a href="${post.link}" target="_blank">${post.buttonText || 'Read more'}</a><br>` : ''}
+              <button class="delete-btn" onclick="deleteArticle('${id}')">Delete</button>
+            </div>`;
+        });
+      }
+    });
+  }
+
+  function deleteArticle(id) {
+    if (confirm("Delete this article?")) {
+      db.ref('articles/' + id).remove();
+      loadArticles();
     }
   }
 </script>
