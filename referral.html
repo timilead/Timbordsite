@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Referral Program - TIMBORD TEAM</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: #f4f8fc;
+      margin: 0; padding: 0;
+    }
+
+    header {
+      background: #2196f3;
+      padding: 15px;
+      text-align: center;
+      color: white;
+      font-size: 22px;
+      font-weight: bold;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: 30px auto;
+      background: white;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    .code-box {
+      background: #eef3f8;
+      padding: 10px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 18px;
+      margin: 10px 0;
+    }
+
+    button {
+      padding: 10px 15px;
+      background: #2196f3;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background: #0d8af0;
+    }
+
+    .summary {
+      margin-top: 20px;
+      font-size: 16px;
+      color: #333;
+    }
+
+    .share-link {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<header>Referral Program</header>
+
+<div class="container">
+  <h2>Your Referral Code</h2>
+  <div id="referralCode" class="code-box">Loading...</div>
+  <button onclick="copyCode()">Copy Code</button>
+
+  <div class="summary">
+    <p>Total Invited Users: <strong id="totalInvited">0</strong></p>
+    <p>Total Earnings: ₦<strong id="totalEarnings">0</strong></p>
+  </div>
+
+  <div class="share-link">
+    <button onclick="shareWhatsApp()">Share on WhatsApp</button>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDzni5AAl5PZ2287aBT_bXc7ZCXMN6szLA",
+    authDomain: "vote-67cff.firebaseapp.com",
+    databaseURL: "https://vote-67cff-default-rtdb.firebaseio.com",
+    projectId: "vote-67cff",
+    storageBucket: "vote-67cff.appspot.com",
+    messagingSenderId: "1065671669902",
+    appId: "1:1065671669902:android:fbd53b77df74858a8ef1df"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.database();
+  let userRefCode = "";
+
+  auth.onAuthStateChanged(user => {
+    if (!user) return window.location.href = "login.html";
+
+    const uid = user.uid;
+    db.ref("users/" + uid).once("value").then(snapshot => {
+      const data = snapshot.val();
+      userRefCode = data.referralCode || "N/A";
+      document.getElementById("referralCode").textContent = userRefCode;
+
+      // Show earnings from database
+      const earnings = data.earnings || 0;
+      document.getElementById("totalEarnings").textContent = earnings.toLocaleString();
+
+      // Count how many users referred
+      let count = 0;
+      db.ref("users").once("value").then(usersSnap => {
+        usersSnap.forEach(child => {
+          const val = child.val();
+          if (val.referredBy === userRefCode) count++;
+        });
+
+        document.getElementById("totalInvited").textContent = count;
+
+        // If user has new referrals beyond recorded count, add 800 for each
+        const currentCount = data.referralCount || 0;
+        const newReferrals = count - currentCount;
+
+        if (newReferrals > 0) {
+          const newEarnings = (data.earnings || 0) + (800 * newReferrals);
+          db.ref("users/" + uid).update({
+            earnings: newEarnings,
+            referralCount: count
+          });
+          document.getElementById("totalEarnings").textContent = newEarnings.toLocaleString();
+        }
+      });
+    });
+  });
+
+  function copyCode() {
+    navigator.clipboard.writeText(userRefCode).then(() => {
+      alert("Referral code copied!");
+    });
+  }
+
+  function shareWhatsApp() {
+    const text = `Join TIMBORD TEAM and win exciting rewards! Use my referral code *${userRefCode}* to sign up and start earning. Visit: https://yourwebsite.com/signup.html`;
+    const link = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(link, "_blank");
+  }
+</script>
+
+</body>
+</html>

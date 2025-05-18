@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin - Manage Users</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f8fc; margin: 0; padding: 0; }
+    header { background: #2196f3; color: white; text-align: center; padding: 15px; font-size: 22px; font-weight: bold; }
+    .container { max-width: 800px; margin: 20px auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    input, button, select {
+      padding: 10px; width: 100%; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 6px;
+    }
+    button {
+      background: #2196f3; color: white; border: none; cursor: pointer; font-weight: bold;
+    }
+    button:hover { background: #0d8af0; }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+    .field { margin-bottom: 10px; }
+    .label { font-weight: bold; margin-bottom: 4px; display: block; }
+    .section-title { font-size: 18px; font-weight: bold; margin: 20px 0 10px; }
+  </style>
+</head>
+<body>
+
+<header>Admin - Manage Users</header>
+
+<div class="container" id="passwordSection">
+  <input type="password" id="adminPassword" placeholder="Enter Admin Password" />
+  <button onclick="validatePassword()">Login</button>
+</div>
+
+<div class="container" id="adminSection" style="display: none">
+  <h2>Search User by UID</h2>
+  <input type="text" id="searchUid" placeholder="Enter User UID" />
+  <button onclick="getUserInfo()">Get User Info</button>
+
+  <div id="userDetails" style="display:none;">
+    <div class="field"><span class="label">Name:</span><input type="text" id="editName" /></div>
+    <div class="field"><span class="label">Email:</span><input type="text" id="editEmail" disabled /></div>
+    <div class="field"><span class="label">Referral Code:</span><input type="text" id="editReferralCode" disabled /></div>
+    <div class="field"><span class="label">Referred By:</span><input type="text" id="editReferredBy" /></div>
+    <div class="field"><span class="label">Earnings (₦):</span><input type="number" id="editEarnings" /></div>
+    <div class="field"><span class="label">Blocked:</span>
+      <select id="editBlocked">
+        <option value="false">No</option>
+        <option value="true">Yes</option>
+      </select>
+    </div>
+    <div class="field"><span class="label">Verified Icon:</span>
+      <select id="editVerified">
+        <option value="false">No</option>
+        <option value="true">Yes</option>
+      </select>
+    </div>
+    <div class="field"><span class="label">Withdrawal Access:</span>
+      <select id="editWithdrawal">
+        <option value="true">Allowed</option>
+        <option value="false">Restricted</option>
+      </select>
+    </div>
+    <div class="field"><span class="label">Contest Access:</span>
+      <select id="editContest">
+        <option value="true">Allowed</option>
+        <option value="false">Restricted</option>
+      </select>
+    </div>
+
+    <div class="actions">
+      <button onclick="saveChanges()">Save Changes</button>
+      <button onclick="deleteUser()" style="background:#f44336">Delete User</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+<script>
+  if (!firebase.apps.length) {
+    firebase.initializeApp({
+      apiKey: "AIzaSyDzni5AAl5PZ2287aBT_bXc7ZCXMN6szLA",
+      authDomain: "vote-67cff.firebaseapp.com",
+      databaseURL: "https://vote-67cff-default-rtdb.firebaseio.com",
+      projectId: "vote-67cff",
+      storageBucket: "vote-67cff.appspot.com",
+      messagingSenderId: "1065671669902",
+      appId: "1:1065671669902:android:fbd53b77df74858a8ef1df"
+    });
+  }
+  const db = firebase.database();
+  let currentUserId = null;
+
+  function validatePassword() {
+    const pass = document.getElementById("adminPassword").value;
+    if (pass === "@Timbord1") {
+      document.getElementById("passwordSection").style.display = "none";
+      document.getElementById("adminSection").style.display = "block";
+    } else {
+      alert("Incorrect Password");
+    }
+  }
+
+  function getUserInfo() {
+    const uid = document.getElementById("searchUid").value.trim();
+    if (!uid) return alert("Enter UID");
+    db.ref("users/" + uid).once("value", snap => {
+      if (!snap.exists()) return alert("User not found");
+      const data = snap.val();
+      currentUserId = uid;
+      document.getElementById("userDetails").style.display = "block";
+      document.getElementById("editName").value = data.name || "";
+      document.getElementById("editEmail").value = data.email || "";
+      document.getElementById("editReferralCode").value = data.referralCode || "";
+      document.getElementById("editReferredBy").value = data.referredBy || "";
+      document.getElementById("editEarnings").value = data.earnings || 0;
+      document.getElementById("editBlocked").value = String(data.blocked || false);
+      document.getElementById("editVerified").value = String(data.verified || false);
+      document.getElementById("editWithdrawal").value = String(data.withdrawalAccess !== false);
+      document.getElementById("editContest").value = String(data.contestAccess !== false);
+    });
+  }
+
+  function saveChanges() {
+    if (!currentUserId) return alert("No user loaded");
+    const updates = {
+      name: document.getElementById("editName").value.trim(),
+      referredBy: document.getElementById("editReferredBy").value.trim(),
+      earnings: parseInt(document.getElementById("editEarnings").value) || 0,
+      blocked: document.getElementById("editBlocked").value === "true",
+      verified: document.getElementById("editVerified").value === "true",
+      withdrawalAccess: document.getElementById("editWithdrawal").value === "true",
+      contestAccess: document.getElementById("editContest").value === "true"
+    };
+    db.ref("users/" + currentUserId).update(updates)
+      .then(() => alert("User updated successfully"))
+      .catch(err => alert("Error: " + err.message));
+  }
+
+  function deleteUser() {
+    if (!currentUserId) return;
+    if (confirm("Are you sure you want to delete this user?")) {
+      db.ref("users/" + currentUserId).remove()
+        .then(() => {
+          alert("User deleted");
+          location.reload();
+        });
+    }
+  }
+</script>
+</body>
+</html>

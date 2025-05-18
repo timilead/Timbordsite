@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login - TIMBORD TEAM</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex; justify-content: center; align-items: center;
+      height: 100vh; margin: 0; background: #f5f5f5;
+    }
+    .container {
+      background: white; padding: 30px; border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1); width: 300px;
+    }
+    h2 { text-align: center; margin-bottom: 20px; }
+    input {
+      width: 100%; padding: 10px; margin: 10px 0;
+      border: 1px solid #ccc; border-radius: 6px;
+    }
+    button {
+      width: 100%; padding: 10px;
+      background: #2196f3; color: white;
+      border: none; border-radius: 6px;
+      font-weight: bold; cursor: pointer;
+    }
+    button:hover {
+      background: #0d8af0;
+    }
+    p { text-align: center; font-size: 14px; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Login to TIMBORD</h2>
+  <input type="email" id="email" placeholder="Email" required />
+  <input type="password" id="password" placeholder="Password" required />
+  <button onclick="login()">Login</button>
+  <p>Don't have an account? <a href="signup.html">Sign Up</a></p>
+  <p id="msg"></p>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDzni5AAl5PZ2287aBT_bXc7ZCXMN6szLA",
+    authDomain: "vote-67cff.firebaseapp.com",
+    databaseURL: "https://vote-67cff-default-rtdb.firebaseio.com",
+    projectId: "vote-67cff",
+    storageBucket: "vote-67cff.appspot.com",
+    messagingSenderId: "1065671669902",
+    appId: "1:1065671669902:android:fbd53b77df74858a8ef1df"
+  };
+  firebase.initializeApp(firebaseConfig);
+
+  function login() {
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+
+    firebase.auth().signInWithEmailAndPassword(email, password)
+      .then(() => {
+        window.location.href = "user-dashboard.html";
+      })
+      .catch(err => {
+        document.getElementById("msg").textContent = err.message;
+      });
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sign Up - TIMBORD TEAM</title>
+  <style>
+    body { font-family:'Segoe UI',Tahoma,sans-serif; background:#f4f8fc; margin:0; padding:0;}
+    .container{max-width:400px;margin:50px auto;background:#fff;padding:30px;border-radius:10px;
+      box-shadow:0 0 10px rgba(0,0,0,0.1);}
+    h2{text-align:center;margin-bottom:20px;}
+    label{display:block;margin-top:15px;font-weight:600;}
+    input,button{width:100%;padding:10px;margin-top:5px;border:1px solid #ccc;border-radius:6px;font-size:14px;}
+    button{background:#2196f3;color:#fff;border:none;font-weight:bold;margin-top:20px;cursor:pointer;}
+    button:hover{background:#0d8af0;}
+    #status{text-align:center;margin-top:15px;font-weight:bold;}
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Sign Up</h2>
+  <form id="signupForm">
+    <label for="name">Full Name</label>
+    <input type="text" id="name" required />
+
+    <label for="email">Email</label>
+    <input type="email" id="email" required />
+
+    <label for="password">Password</label>
+    <input type="password" id="password" required />
+
+    <label for="referralCode">Referral Code (optional)</label>
+    <input type="text" id="referralCode" placeholder="If someone invited you" />
+
+    <label for="paymentCode">Payment Code</label>
+    <input type="text" id="paymentCode" placeholder="Enter your payment code" required />
+
+    <button type="submit">Sign Up</button>
+    <div id="status"></div>
+  </form>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey:"AIzaSyDzni5AAl5PZ2287aBT_bXc7ZCXMN6szLA",
+    authDomain:"vote-67cff.firebaseapp.com",
+    databaseURL:"https://vote-67cff-default-rtdb.firebaseio.com",
+    projectId:"vote-67cff",
+    storageBucket:"vote-67cff.appspot.com",
+    messagingSenderId:"1065671669902",
+    appId:"1:1065671669902:android:fbd53b77df74858a8ef1df"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db   = firebase.database();
+
+  document.getElementById("signupForm").addEventListener("submit", async e=>{
+    e.preventDefault();
+    const name  = document.getElementById("name").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const pass  = document.getElementById("password").value.trim();
+    const refIn = document.getElementById("referralCode").value.trim().toUpperCase();
+    const payCd = document.getElementById("paymentCode").value.trim().toUpperCase();
+    const status= document.getElementById("status");
+
+    if(!name||!email||!pass||!payCd){status.textContent="Please fill in all required fields.";return;}
+
+    /* ► Validate payment code ◄ */
+    status.textContent="Validating payment code...";
+    const snap = await db.ref("paymentCodes").orderByChild("code").equalTo(payCd).once("value");
+    if(!snap.exists()){
+      status.textContent="Payment code not found. Please check and try again.";
+      return;
+    }
+    /* ensure code unused */
+    let codeKey=null,codeObj=null;
+    snap.forEach(s=>{codeKey=s.key;codeObj=s.val();});
+    if(codeObj.used){
+      status.textContent="Payment code has already been used.";
+      return;
+    }
+
+    /* ► Create user ◄ */
+    status.textContent="Creating account...";
+    try{
+      const cred = await auth.createUserWithEmailAndPassword(email,pass);
+      const uid  = cred.user.uid;
+      const myRef = Math.random().toString(36).substr(2,8).toUpperCase();
+
+      await db.ref("users/"+uid).set({
+        name,email,
+        referralCode:myRef,
+        referredBy: refIn || null,
+        paymentCode: payCd,
+        joinedAt:new Date().toISOString()
+      });
+
+      /* mark payment code as used */
+      await db.ref("paymentCodes/"+codeKey).update({used:true,usedBy:uid});
+
+      status.textContent="Sign up successful!";
+      setTimeout(()=>window.location.href="user-dashboard.html",1500);
+    }catch(err){
+      status.textContent=err.message;
+    }
+  });
+</script>
+
+</body>
+</html>

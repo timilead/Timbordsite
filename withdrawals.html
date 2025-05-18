@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Withdrawals - TIMBORD TEAM</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: #f4f8fc;
+      margin: 0; padding: 0;
+    }
+    header {
+      background: #2196f3;
+      padding: 15px;
+      text-align: center;
+      color: white;
+      font-size: 22px;
+      font-weight: bold;
+    }
+    .container {
+      max-width: 500px;
+      margin: 30px auto;
+      background: white;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    }
+    label {
+      display: block;
+      margin: 12px 0 4px;
+      font-weight: 600;
+    }
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    button {
+      background: #2196f3;
+      color: white;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #0d8af0;
+    }
+    #status {
+      text-align: center;
+      font-weight: bold;
+      color: green;
+      margin-top: 10px;
+    }
+    .error {
+      color: red;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+<header>Withdrawal Request</header>
+
+<div class="container">
+  <form id="withdrawalForm">
+    <label for="amount">Amount (₦)</label>
+    <input type="number" id="amount" min="1000" placeholder="Minimum ₦1,000" required />
+    
+    <label for="bankName">Bank Name</label>
+    <input type="text" id="bankName" required />
+    
+    <label for="accountNumber">Account Number</label>
+    <input type="text" id="accountNumber" required />
+    
+    <button type="submit">Submit Withdrawal</button>
+    <div id="status"></div>
+  </form>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDzni5AAl5PZ2287aBT_bXc7ZCXMN6szLA",
+    authDomain: "vote-67cff.firebaseapp.com",
+    databaseURL: "https://vote-67cff-default-rtdb.firebaseio.com",
+    projectId: "vote-67cff",
+    storageBucket: "vote-67cff.appspot.com",
+    messagingSenderId: "1065671669902",
+    appId: "1:1065671669902:android:fbd53b77df74858a8ef1df"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.database();
+
+  auth.onAuthStateChanged(user => {
+    if (!user) window.location.href = "login.html";
+  });
+
+  document.getElementById("withdrawalForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    const user = firebase.auth().currentUser;
+    if (!user) return alert("Please log in first.");
+
+    const amount = parseInt(document.getElementById("amount").value);
+    const bankName = document.getElementById("bankName").value.trim();
+    const accountNumber = document.getElementById("accountNumber").value.trim();
+    const statusDiv = document.getElementById("status");
+
+    if (amount < 1000) {
+      statusDiv.innerHTML = "<span class='error'>Minimum withdrawal amount is ₦1,000.</span>";
+      return;
+    }
+
+    const withdrawalRequest = {
+      userId: user.uid,
+      amount,
+      bankName,
+      accountNumber,
+      status: "pending",
+      requestedAt: new Date().toISOString()
+    };
+
+    db.ref("withdrawals").push(withdrawalRequest)
+      .then(() => {
+        statusDiv.textContent = "Withdrawal request submitted successfully.";
+        document.getElementById("withdrawalForm").reset();
+      })
+      .catch(error => {
+        statusDiv.innerHTML = "<span class='error'>Error: " + error.message + "</span>";
+      });
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Admin Panel - Submissions & Management</title>
+<style>
+  body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f7f9fc; }
+  header { background:#2196f3; color:#fff; padding:15px; text-align:center; font-size:24px; font-weight:bold; }
+  .container { max-width: 1100px; margin: 20px auto; padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1);}
+  h2 { margin-top: 0; color:#2196f3; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+  th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+  th { background: #2196f3; color: white; }
+  button { padding: 6px 12px; margin: 2px; border:none; border-radius:4px; cursor:pointer; font-weight:bold; }
+  .approve { background: #4caf50; color: white; }
+  .reject { background: #f44336; color: white; }
+  .edit { background: #2196f3; color: white; }
+  .notify { background: #ff9800; color: white; }
+  #loginSection { max-width: 400px; margin: 100px auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 12px rgba(0,0,0,0.2); }
+  #adminPanel { display: none; }
+  label, input { display: block; width: 100%; margin-bottom: 15px; font-size: 16px; }
+  input { padding: 10px; }
+</style>
+</head>
+<body>
+
+<header>Admin Panel - Contest & Withdrawal Management</header>
+<div>
+
+<div id="loginSection" class="container">
+  <h2>Enter Admin Password</h2>
+  <input type="password" id="adminPassword" placeholder="Password" />
+  <button onclick="login()">Login</button>
+  <p id="loginError" style="color:red;"></p>
+</div>
+
+<div id="adminPanel" class="container">
+
+  <h2>Contestant Submissions</h2>
+  <table id="contestantTable">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Category</th>
+        <th>WhatsApp</th>
+        <th>Payment Code</th>
+        <th>Status</th>
+        <th>Submitted At</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h2>Withdrawal Requests</h2>
+  <table id="withdrawalTable">
+    <thead>
+      <tr>
+        <th>User ID</th>
+        <th>Amount (₦)</th>
+        <th>Bank Name</th>
+        <th>Account Number</th>
+        <th>Status</th>
+        <th>Requested At</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h2>User Referral Logs</h2>
+  <table id="referralTable">
+    <thead>
+      <tr>
+        <th>User ID</th>
+        <th>Name</th>
+        <th>Referral Code</th>
+        <th>Referred Users Count</th>
+        <th>Total Earnings (₦800 each)</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h2>Send Admin Notifications</h2>
+  <label for="notifUserId">User ID (leave empty for broadcast):</label>
+  <input type="text" id="notifUserId" placeholder="User ID or blank for all users" />
+  <label for="notifMessage">Message:</label>
+  <input type="text" id="notifMessage" placeholder="Notification message" />
+  <button onclick="sendNotification()">Send Notification</button>
+  <p id="notifStatus"></p>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDzni5AAl5PZ2287aBT_bXc7ZCXMN6szLA",
+    authDomain: "vote-67cff.firebaseapp.com",
+    databaseURL: "https://vote-67cff-default-rtdb.firebaseio.com",
+    projectId: "vote-67cff",
+    storageBucket: "vote-67cff.appspot.com",
+    messagingSenderId: "1065671669902",
+    appId: "1:1065671669902:android:fbd53b77df74858a8ef1df"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  const ADMIN_PASSWORD = "timbord83";
+
+  const loginSection = document.getElementById('loginSection');
+  const adminPanel = document.getElementById('adminPanel');
+  const loginError = document.getElementById('loginError');
+
+  function login() {
+    const pass = document.getElementById('adminPassword').value.trim();
+    if(pass === ADMIN_PASSWORD) {
+      loginSection.style.display = 'none';
+      adminPanel.style.display = 'block';
+      loadContestantSubmissions();
+      loadWithdrawals();
+      loadReferralLogs();
+    } else {
+      loginError.textContent = "Incorrect password.";
+    }
+  }
+
+  // Load contestant submissions
+  function loadContestantSubmissions() {
+    const tbody = document.querySelector("#contestantTable tbody");
+    tbody.innerHTML = "<tr><td colspan='7'>Loading...</td></tr>";
+    db.ref("contest_submissions").on("value", snapshot => {
+      const data = snapshot.val();
+      tbody.innerHTML = "";
+      if(!data) {
+        tbody.innerHTML = "<tr><td colspan='7'>No submissions found.</td></tr>";
+        return;
+      }
+      Object.entries(data).forEach(([id, sub]) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${sub.name || "-"}</td>
+          <td>${sub.category || "-"}</td>
+          <td>${sub.whatsapp || "-"}</td>
+          <td>${sub.paymentCode || "-"}</td>
+          <td>${sub.status || "pending"}</td>
+          <td>${new Date(sub.submittedAt).toLocaleString()}</td>
+          <td>
+            <button class="approve" onclick="updateSubmissionStatus('${id}', 'approved')">Approve</button>
+            <button class="reject" onclick="updateSubmissionStatus('${id}', 'rejected')">Reject</button>
+            <button class="edit" onclick="editSubmission('${id}')">Edit</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    });
+  }
+
+  function updateSubmissionStatus(id, status) {
+    db.ref("contest_submissions/" + id).update({ status });
+    alert(`Submission ${status}.`);
+  }
+
+  // Simple edit: prompt for new name, category, whatsapp
+  function editSubmission(id) {
+    db.ref("contest_submissions/" + id).once("value").then(snap => {
+      const data = snap.val();
+      if (!data) return alert("Submission not found.");
+
+      const newName = prompt("Edit Name:", data.name) || data.name;
+      const newCategory = prompt("Edit Category:", data.category) || data.category;
+      const newWhatsapp = prompt("Edit WhatsApp Number:", data.whatsapp) || data.whatsapp;
+
+      db.ref("contest_submissions/" + id).update({
+        name: newName,
+        category: newCategory,
+        whatsapp: newWhatsapp
+      });
+    });
+  }
+
+  // Load withdrawals
+  function loadWithdrawals() {
+    const tbody = document.querySelector("#withdrawalTable tbody");
+    tbody.innerHTML = "<tr><td colspan='7'>Loading...</td></tr>";
+    db.ref("withdrawals").on("value", snapshot => {
+      const data = snapshot.val();
+      tbody.innerHTML = "";
+      if(!data) {
+        tbody.innerHTML = "<tr><td colspan='7'>No withdrawal requests found.</td></tr>";
+        return;
+      }
+      Object.entries(data).forEach(([id, w]) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${w.userId || "-"}</td>
+          <td>₦${w.amount || "-"}</td>
+          <td>${w.bankName || "-"}</td>
+          <td>${w.accountNumber || "-"}</td>
+          <td>${w.status || "pending"}</td>
+          <td>${new Date(w.requestedAt).toLocaleString()}</td>
+          <td>
+            <button class="approve" onclick="updateWithdrawalStatus('${id}', 'approved', '${w.userId}')">Approve</button>
+            <button class="reject" onclick="updateWithdrawalStatus('${id}', 'declined', '${w.userId}')">Decline</button>
+            <button class="notify" onclick="sendNotificationToUser('${w.userId}', 'Please check your withdrawal status.')">Notify</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    });
+  }
+
+  function updateWithdrawalStatus(id, status, userId) {
+    db.ref("withdrawals/" + id).update({ status });
+    sendNotificationToUser(userId, `Your withdrawal request has been ${status}.`);
+    alert(`Withdrawal request ${status}.`);
+  }
+
+  // Load referral logs
+  function loadReferralLogs() {
+    const tbody = document.querySelector("#referralTable tbody");
+    tbody.innerHTML = "<tr><td colspan='5'>Loading...</td></tr>";
+
+    db.ref("users").once("value").then(snapshot => {
+      const data = snapshot.val();
+      tbody.innerHTML = "";
+
+      if (!data) {
+        tbody.innerHTML = "<tr><td colspan='5'>No user data found.</td></tr>";
+        return;
+      }
+
+      Object.entries(data).forEach(([uid, user]) => {
+        const userRefCode = user.referralCode || "";
+        let count = 0;
+        // Count referred users
+        Object.values(data).forEach(u => {
+          if (u.referredBy === userRefCode) count++;
+        });
+
+        const totalEarned = count * 800;
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${uid}</td>
+          <td>${user.name || "-"}</td>
+          <td>${userRefCode}</td>
+          <td>${count}</td>
+          <td>₦${totalEarned}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    });
+  }
+
+  // Send notifications (broadcast or direct)
+  function sendNotification() {
+    const userId = document.getElementById("notifUserId").value.trim();
+    const message = document.getElementById("notifMessage").value.trim();
+    const notifStatus = document.getElementById("notifStatus");
+    if (!message) {
+      notifStatus.textContent = "Message cannot be empty.";
+      notifStatus.style.color = "red";
+      return;
+    }
+    notifStatus.textContent = "Sending...";
+
+    if (userId === "") {
+      // Broadcast to all users
+      db.ref("users").once("value").then(snapshot => {
+        const users = snapshot.val();
+        if (!users) {
+          notifStatus.textContent = "No users found to send notification.";
+          notifStatus.style.color = "red";
+          return;
+        }
+        const updates = {};
+        Object.keys(users).forEach(uid => {
+          const newKey = db.ref().child("notifications").child(uid).push().key;
+          updates[`notifications/${uid}/${newKey}`] = {
+            message,
+            date: new Date().toISOString()
+          };
+        });
+        return db.ref().update(updates);
+      }).then(() => {
+        notifStatus.textContent = "Broadcast notification sent!";
+        notifStatus.style.color = "green";
+        document.getElementById("notifUserId").value = "";
+        document.getElementById("notifMessage").value = "";
+      }).catch(error => {
+        notifStatus.textContent = "Error: " + error.message;
+        notifStatus.style.color = "red";
+      });
+    } else {
+      // Direct message
+      const newKey = db.ref().child("notifications").child(userId).push().key;
+      db.ref(`notifications/${userId}/${newKey}`).set({
+        message,
+        date: new Date().toISOString()
+      }).then(() => {
+        notifStatus.textContent = "Notification sent!";
+        notifStatus.style.color = "green";
+        document.getElementById("notifUserId").value = "";
+        document.getElementById("notifMessage").value = "";
+      }).catch(error => {
+        notifStatus.textContent = "Error: " + error.message;
+        notifStatus.style.color = "red";
+      });
+    }
+  }
+</script>
+
+</body>
+</html>
